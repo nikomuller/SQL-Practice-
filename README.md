@@ -1,5 +1,88 @@
 # SQL-Practice-
-This is just a repository containing small practice SQL questions.
+This is just a repository containing small queries to practice my SQL.
+
+
+CREATE OR REPLACE TYPE CustomerType AS OBJECT 
+(
+    CustomerID INT,
+    CustomerName VARCHAR2(20),
+    DOB DATE,
+    Gender VARCHAR2(20),
+    MainSport VARCHAR2(20)
+);
+
+CREATE TABLE CUSTOMERObjTable OF CustomerType
+(
+    CustomerID PRIMARY KEY,
+    CustomerName NOT NULL
+);
+
+CREATE OR REPLACE TYPE SportsGearType AS OBJECT
+(
+    SportsGearID INT,
+    SportsGearName VARCHAR2(20),
+    SizeOfGear VARCHAR2(20),
+    Price INT
+);
+
+
+CREATE TYPE SPORTSGEAR_TABLE_TYPE AS TABLE OF SportsGearType;
+
+CREATE OR REPLACE TYPE InvoiceCType AS OBJECT
+(
+    InvoiceID INT,
+    InvoiceDate DATE,
+    CustDiscountAmt INT,
+    TotalInvoiced INT,
+    StoreName VARCHAR2(20),
+    Customer REF CustomerType,
+    SportsGear SPORTSGEAR_TABLE_TYPE
+);
+
+CREATE TABLE INVOICESObjTable OF InvoiceCType
+(
+    InvoiceID PRIMARY KEY,
+    InvoiceDate NOT NULL,
+    StoreName NOT NULL,
+    CUSTOMER SCOPE IS CUSTOMERObjTable
+) NESTED TABLE SportsGear STORE AS SPORTSGEAR_TABLE_TYPE;
+
+
+
+INSERT INTO CUSTOMERObjTable VALUES
+( 
+--CustomerID, CustomerName, DoB, Gender, MainSport
+ 1, 'Bob Smith', '01-Jun-2000', 'M', 'Football'
+);
+INSERT INTO CUSTOMERObjTable VALUES
+( 2, 'Mary Smith', '02-Oct-2001', 'F', 'GAA');
+
+
+INSERT INTO INVOICESObjTable
+( SELECT 2, '18-Oct-2023', 'Tallaght Store'
+    REF(dt), -- The reference to the deliverer Mary Smith
+    SPORTSGEAR_TABLE_TYPE
+    (
+    SportsGearType(1, 'Boots', 6, 50.99),
+    SportsGearType(2, 'Shin Guards', 7, 60.99),
+    SportsGearType(3, 'Helmet', 9, 60.00)
+    )
+    FROM CUSTOMERObjTable dt
+    WHERE dt.CUSTOMERNAME = 'Bob Smith'
+);
+
+
+SELECT 
+I.Customer.CUSTOMERNAME "CustomerName", I.MainSport, I.StoreName
+from INVOICESObjTable I , table(I.SportsGear) M
+order by 1,8;
+
+SELECT I.InvoiceID, I.InvoiceDate, SG.SportsGear
+FROM INVOICESObjtable I
+(I.SportsGear) AS SG;
+
+
+
 
 
 1. Count how many deliveries have there been at 17:30 with a kms travelled of < than 5 km
